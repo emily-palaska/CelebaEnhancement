@@ -24,30 +24,33 @@ class CelebADataset():
         Assumes the images are in the folder structure:
         root_dir/image_name.jpg
         """
-
+        start_time = time.time()
+        
         # Return zeros for noise
         if self.noise:
             num_images = 100
             self.y = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)  # RGB images
-            return self.y
-        
-        start_time = time.time()
-        image_files = [f for f in os.listdir(self.root_dir) if f.endswith('.jpg')]  # List all image files
-        num_images = len(image_files)
-        
-        # Create arrays to hold the image data and labels
-        y_data = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)  # RGB images
+        elif os.path.exists(os.path.join(self.root_dir, 'celeba.npz')):
+            self.y = np.load(os.path.join(self.root_dir, 'celeba.npz'))['data']
+            num_images = self.y.shape[0]
+        else:
+            image_files = [f for f in os.listdir(self.root_dir) if f.endswith('.jpg')]  # List all image files
+            num_images = len(image_files)
             
-        # Loop through each image and load it
-        for i, image_file in enumerate(image_files):
-            print(f'Loading {image_file}')
-            image_path = os.path.join(self.root_dir, image_file)
-            img = Image.open(image_path).resize((self.width, self.height))  # Resize if needed
-            img = np.array(img)  # Convert to numpy array
-            y_data[i] = img  # Store image
-
-        self.y = y_data  # All images
+            # Create arrays to hold the image data and labels
+            y_data = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)  # RGB images
+                
+            # Loop through each image and load it
+            for i, image_file in enumerate(image_files):
+                image_path = os.path.join(self.root_dir, image_file)
+                img = Image.open(image_path).resize((self.width, self.height))  # Resize if needed
+                img = np.array(img)  # Convert to numpy array
+                y_data[i] = img  # Store image
+    
+            self.y = y_data  # All images
+            np.savez_compressed(os.path.join(self.root_dir, 'celeba.npz'), data=self.y)
         end_time = time.time()
+        
         if self.verbose:
             print(f"Loaded {num_images} images from {self.root_dir} in {end_time - start_time : .2f}s.")
         
