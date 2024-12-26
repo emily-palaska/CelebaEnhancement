@@ -13,7 +13,7 @@ transform = transforms.Compose([
 dataset = CelebA(
     root='data/',
     split='train',
-    download=False,
+    download=True,
     transform=transform
 )
 
