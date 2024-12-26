@@ -1,5 +1,0 @@
-**/__pycache__
-.idea
-/source/data
-/data/*
-/data

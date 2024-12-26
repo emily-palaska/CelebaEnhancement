@@ -3,3 +3,4 @@
 *.jpg
 *.txt
 /data
+**/__pycache__/
