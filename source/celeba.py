@@ -1,10 +1,10 @@
 import numpy as np
 from PIL import Image
-import os
+import os, time
 
 # add dataset extension
 class CelebADataset():
-    def __init__(self, root_dir='..\data\celeba\img_align_celeba', test_split=0.4, norm='min-max', verbose=True, noise=False):
+    def __init__(self, root_dir='../data/celeba/img_align_celeba', test_split=0.4, norm='min-max', verbose=True, noise=False):
         self.verbose = verbose
         self.noise = noise
         self.norm = norm
@@ -30,7 +30,8 @@ class CelebADataset():
             num_images = 100
             self.y = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)  # RGB images
             return self.y
-
+        
+        start_time = time.time()
         image_files = [f for f in os.listdir(self.root_dir) if f.endswith('.jpg')]  # List all image files
         num_images = len(image_files)
         
@@ -39,15 +40,16 @@ class CelebADataset():
             
         # Loop through each image and load it
         for i, image_file in enumerate(image_files):
+            print(f'Loading {image_file}')
             image_path = os.path.join(self.root_dir, image_file)
             img = Image.open(image_path).resize((self.width, self.height))  # Resize if needed
             img = np.array(img)  # Convert to numpy array
             y_data[i] = img  # Store image
 
         self.y = y_data  # All images
-        
+        end_time = time.time()
         if self.verbose:
-            print(f"Loaded {num_images} images from {self.root_dir}.")
+            print(f"Loaded {num_images} images from {self.root_dir} in {end_time - start_time : .2f}s.")
         
         return y_data
     
