@@ -1,91 +1,152 @@
 import numpy as np
 from PIL import Image
 import os, time
+import matplotlib.pyplot as plt
+from torch.utils.data import Dataset
+from sklearn.model_selection import train_test_split
 
-# add dataset extension
-class CelebADataset():
-    def __init__(self, root_dir='../data/celeba/img_align_celeba', test_split=0.4, norm='min-max', verbose=True, noise=False):
+class CelebADataset(Dataset):
+    def __init__(self, root_dir='../data/', test_split=0.4, norm='min-max', verbose=True, noise=False, num_samples=None):
         self.verbose = verbose
         self.noise = noise
         self.norm = norm
         self.root_dir = root_dir
+        self.num_samples = num_samples
         self.height = 178
         self.width = 218
+        self.test_split = test_split
 
         # Place-holders
         self.x_train = None
         self.y_train = None
         self.x_test = None
         self.y_test = None
-    
+
     def load(self):
         """
-        Load all the images from the root_dir and their corresponding labels.
-        Assumes the images are in the folder structure:
-        root_dir/image_name.jpg
+        Load all the images or retrieve from HDF5 for faster loading.
         """
         start_time = time.time()
-        
-        # Return zeros for noise
+
         if self.noise:
             num_images = 100
-            self.y = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)  # RGB images
-        elif os.path.exists(os.path.join(self.root_dir, 'celeba.npz')):
-            self.y = np.load(os.path.join(self.root_dir, 'celeba.npz'))['data']
-            num_images = self.y.shape[0]
+            self.y = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)
         else:
-            image_files = [f for f in os.listdir(self.root_dir) if f.endswith('.jpg')]  # List all image files
-            num_images = len(image_files)
-            
-            # Create arrays to hold the image data and labels
-            y_data = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)  # RGB images
-                
-            # Loop through each image and load it
+            base_folder = 'img_align_celeba'
+            image_dir = os.path.join(self.root_dir, base_folder)
+            image_files = [f for f in os.listdir(image_dir) if f.endswith('.jpg')]
+            num_images = self.num_samples if self.num_samples else len(image_files)
+            image_files = image_files[:num_images]
+
+            y_data = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)
             for i, image_file in enumerate(image_files):
-                image_path = os.path.join(self.root_dir, image_file)
-                img = Image.open(image_path).resize((self.width, self.height))  # Resize if needed
-                img = np.array(img)  # Convert to numpy array
-                y_data[i] = img  # Store image
-    
-            self.y = y_data  # All images
-            np.savez_compressed(os.path.join(self.root_dir, 'celeba.npz'), data=self.y)
+                image_path = os.path.join(image_dir, image_file)
+                img = Image.open(image_path).resize((self.width, self.height))
+                y_data[i] = np.array(img).astype(np.uint8)
+
+            self.y = y_data
+
+
         end_time = time.time()
-        
+
         if self.verbose:
-            print(f"Loaded {num_images} images from {self.root_dir} in {end_time - start_time : .2f}s.")
-        
-        return y_data
-    
+            print(f"Loaded {len(self.y)} images from {self.root_dir} in {end_time - start_time:.2f}s.")
+
+        self._create_x()
+        self._split()
+
     def get_train_test_split(self):
-        # return x, y train and test
-        return NotImplemented
-    
+        return self.x_train, self.y_train, self.x_test, self.y_test
+
     def statistical_analysis(self):
-        # statistical analysis similar to cifar10
-        return NotImplemented
-    
-    def _normalize(self):  
+        """
+        Perform statistical analysis such as mean, standard deviation, min, max for each channel.
+        Also plot a grid with some random examples of x and y pairs.
+        """
+        means = self.y.mean(axis=(0, 1, 2))
+        stds = self.y.std(axis=(0, 1, 2))
+        mins = self.y.min(axis=(0, 1, 2))
+        maxs = self.y.max(axis=(0, 1, 2))
+
+        stats = {
+            'mean': means.tolist(),
+            'std': stds.tolist(),
+            'min': mins.tolist(),
+            'max': maxs.tolist()
+        }
+        if self.verbose:
+            print("Statistical analysis:", stats)
+
+        # Plot random examples
+        num_examples = 6
+        fig, axes = plt.subplots(2, num_examples, figsize=(15, 5))
+        fig.suptitle("Examples of CelebA Image Quality Enhacement Dataset", fontsize=16)
+        random_indices = np.random.choice(len(self.x_train), num_examples, replace=False)
+
+        for i, idx in enumerate(random_indices):
+            axes[0, i].imshow(self.x_train[idx].astype(np.uint8))
+            axes[0, i].axis('off')
+            axes[0, i].set_title("x")
+
+            axes[1, i].imshow(self.y_train[idx].astype(np.uint8))
+            axes[1, i].axis('off')
+            axes[1, i].set_title("y")
+
+        plt.tight_layout()
+        plt.title('Examples of CelebA Samples')
+        plt.savefig('../plots/examples.png')
+
+        return stats
+
+    def _normalize(self):
+        """
+        Normalize the dataset based on the specified method.
+        """
         if self.norm == 'min-max':
-            # add logic for normalization
-            return NotImplemented
+            self.y = (self.y - self.y.min()) / (self.y.max() - self.y.min())
+        elif self.norm == 'z-score':
+            self.y = (self.y - self.y.mean(axis=(0, 1, 2))) / self.y.std(axis=(0, 1, 2))
         else:
-            # add logic for other normalization methods
-            return NotImplemented
+            raise NotImplementedError(f'Normalization method {self.norm} not implemented.')
 
     def _create_x(self):
-        # the x is degraded version of y with lower quality
-        return NotImplemented             
+        """
+        Create degraded versions of y to form x.
+        For example, apply blurring to reduce quality.
+        """
+        self.x = np.copy(self.y)
+        for i in range(self.x.shape[0]):
+            img = Image.fromarray(self.x[i])
+            img = img.resize((self.width // 2, self.height // 2)).resize((self.width, self.height))
+            self.x[i] = np.array(img)
 
     def _split(self):
-        # here we make a split based on self.test_split with stratification
-        return NotImplemented
-    
+        """
+        Split the dataset into training and testing sets based on the test_split.
+        """
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
+            self.x, self.y, test_size=self.test_split, random_state=42, stratify=None
+        )
+
     def __len__(self):
-        return NotImplemented
-    
-    def __get_item__(self):
-        return NotImplemented
+        """
+        Return the total number of images in the dataset.
+        """
+        return len(x_train)
+
+    def __getitem__(self, idx):
+        """
+        Retrieve the x and y pair for the given index.
+        """
+        if idx < len(self.x_train):
+            return self.x_train[idx], self.y_train[idx]
+        else:
+            test_idx = idx - len(self.x_train)
+            return self.x_test[test_idx], self.y_test[test_idx]
 
 if __name__ == '__main__':
-    dataset = CelebADataset()
+    dataset = CelebADataset(num_samples=10000)
     dataset.load()
+    stats = dataset.statistical_analysis()
+    x_train, y_train, x_test, y_test = dataset.get_train_test_split()
+    print(f"Training set: {len(x_train)} images, Testing set: {len(x_test)} images.")
