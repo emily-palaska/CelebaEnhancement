@@ -2,10 +2,9 @@ import numpy as np
 from PIL import Image
 import os, time
 import matplotlib.pyplot as plt
-from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 
-class CelebADataset(Dataset):
+class CelebADataset:
     def __init__(self, root_dir='../data/', test_split=0.4, norm='min-max', verbose=True, noise=False, num_samples=None):
         self.verbose = verbose
         self.noise = noise
@@ -127,26 +126,3 @@ class CelebADataset(Dataset):
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
             self.x, self.y, test_size=self.test_split, random_state=42, stratify=None
         )
-
-    def __len__(self):
-        """
-        Return the total number of images in the dataset.
-        """
-        return len(x_train)
-
-    def __getitem__(self, idx):
-        """
-        Retrieve the x and y pair for the given index.
-        """
-        if idx < len(self.x_train):
-            return self.x_train[idx], self.y_train[idx]
-        else:
-            test_idx = idx - len(self.x_train)
-            return self.x_test[test_idx], self.y_test[test_idx]
-
-if __name__ == '__main__':
-    dataset = CelebADataset(num_samples=10000)
-    dataset.load()
-    stats = dataset.statistical_analysis()
-    x_train, y_train, x_test, y_test = dataset.get_train_test_split()
-    print(f"Training set: {len(x_train)} images, Testing set: {len(x_test)} images.")
