@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision.transforms import Resize
 from tqdm import tqdm
+import time
 
 # Neural Network Class
 class ImageEnhancementNet(nn.Module):
@@ -35,8 +36,13 @@ class ImageEnhancementNet(nn.Module):
 
 # Train Function
 def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
+    # Initialize output file
+    with open("output.txt", "w") as file:
+            file.write(f"")
+    
     model.train()
     for epoch in range(epochs):
+        start_time = time.time()
         epoch_loss = 0
         for degraded, clear in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
             degraded, clear = degraded.to(device), clear.to(device)
@@ -51,8 +57,10 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
             optimizer.step()
             
             epoch_loss += loss.item()
-        print(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}")
-
+        end_time =  time.time()
+        print(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}")
+        with open("output.txt", "a") as file:
+            file.write(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}\n")
 # Custom Dataset Class
 class ImageEnhancementDataset(Dataset):
     def __init__(self, x_data, y_data):

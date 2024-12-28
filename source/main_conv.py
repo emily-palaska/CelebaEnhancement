@@ -7,7 +7,7 @@ import torch.nn as nn
 
 def main():
     # Initiliaze dataset
-    dataset = CelebADataset(noise=True, num_samples=10000)
+    dataset = CelebADataset(num_samples=10000)
     dataset.load()    
 
     # Datasets and Loaders
@@ -24,8 +24,8 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Train and evaluate
-    train_model(model, train_loader, criterion, optimizer, device, epochs=1)
-    metrics = evaluate_image_quality(model, test_loader, device, json_path="..\results\10000samples_10epochs.json")
+    train_model(model, train_loader, criterion, optimizer, device, epochs=10)
+    metrics = evaluate_image_quality(model, test_loader, device, json_path="../results/samples10000_10epochs.json")
     print(metrics)
 
 
