@@ -37,7 +37,8 @@ def evaluate_image_quality(model, test_loader, device, json_path='./metrics.json
                 # Compute metrics for each image
                 mse = np.mean((enhanced - original) ** 2)
                 psnr_score = psnr(original, enhanced, data_range=original.max() - original.min())
-                ssim_score = ssim(original, enhanced, multichannel=True)
+                data_range = np.max(enhanced) - np.min(enhanced)
+                ssim_score = ssim(enhanced, original, channel_axis=2, data_range=data_range)
 
                 mse_scores.append(mse)
                 psnr_scores.append(psnr_score)
