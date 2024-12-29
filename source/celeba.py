@@ -57,7 +57,7 @@ class CelebADataset:
     def get_train_test_split(self):
         return self.x_train, self.y_train, self.x_test, self.y_test
 
-    def statistical_analysis(self):
+    def statistical_analysis(self, save_path='./examples.png'):
         """
         Perform statistical analysis such as mean, standard deviation, min, max for each channel.
         Also plot a grid with some random examples of x and y pairs.
@@ -93,7 +93,7 @@ class CelebADataset:
 
         plt.tight_layout()
         plt.title('Examples of CelebA Samples')
-        plt.savefig('../plots/examples.png')
+        plt.savefig(save_path)
 
         return stats
 

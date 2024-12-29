@@ -39,7 +39,8 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
     # Initialize output file
     with open("output.txt", "w") as file:
             file.write(f"")
-    
+    loss = []
+    duration = []
     model.train()
     for epoch in range(epochs):
         start_time = time.time()
@@ -58,9 +59,13 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
             
             epoch_loss += loss.item()
         end_time =  time.time()
+        loss.append(epoch_loss/len(train_loader))
+        duration.append(end_time - start_time)
         print(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}")
         with open("output.txt", "a") as file:
             file.write(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}\n")
+    return {'loss': loss, 'duration': duration}
+    
 # Custom Dataset Class
 class ImageEnhancementDataset(Dataset):
     def __init__(self, x_data, y_data):

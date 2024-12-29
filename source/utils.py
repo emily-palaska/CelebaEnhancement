@@ -3,11 +3,24 @@ import numpy as np
 import torch, json
 
 def save_metrics_to_json(metrics, file_path):
-    """Save metrics dictionary to a JSON file."""
-    with open(file_path, 'w') as json_file:
-        json.dump(metrics, json_file, indent=4)
+    """
+    Save metrics dictionary to a JSON file.
+    Converts NumPy types to Python native types to ensure JSON compatibility.
+    """
+    def convert_types(obj):
+        if isinstance(obj, (np.integer, np.floating)):
+            return obj.item()
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
 
-def evaluate_image_quality(model, test_loader, device, json_path='./metrics.json'):
+    # Use a dictionary comprehension to convert values in the dictionary
+    serializable_metrics = {key: convert_types(value) for key, value in metrics.items()}
+
+    with open(file_path, 'w') as json_file:
+        json.dump(serializable_metrics, json_file, indent=4)
+
+def evaluate_image_quality(model, test_loader, device):
     """Evaluate image quality enhancement model.
 
     Args:
@@ -50,8 +63,5 @@ def evaluate_image_quality(model, test_loader, device, json_path='./metrics.json
         'avg_psnr': np.mean(psnr_scores),
         'avg_ssim': np.mean(ssim_scores),
     }
-
-    # Save metrics to JSON file
-    save_metrics_to_json(metrics, json_path)
 
     return metrics
