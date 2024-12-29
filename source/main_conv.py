@@ -1,6 +1,6 @@
 from celeba import CelebADataset
-from image_enhancement_net import ImageEnhancementDataset, ImageEnhancementNet, train_model
-from utils import evaluate_image_quality, save_metrics_to_json
+from conv_net import ImageEnhancementDataset, ImageEnhancementNet
+from utils import evaluate_image_quality, save_metrics_to_json, train_model
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn

@@ -1,6 +1,7 @@
 from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
 import numpy as np
-import torch, json
+import torch, json, time
+from tqdm import tqdm
 
 def save_metrics_to_json(metrics, file_path):
     """
@@ -65,3 +66,35 @@ def evaluate_image_quality(model, test_loader, device):
     }
 
     return metrics
+
+# Train Function
+def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
+    # Initialize output file
+    with open("output.txt", "w") as file:
+            file.write(f"")
+    loss = []
+    duration = []
+    model.train()
+    for epoch in range(epochs):
+        start_time = time.time()
+        epoch_loss = 0
+        for degraded, clear in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
+            degraded, clear = degraded.to(device), clear.to(device)
+            
+            # Forward Pass
+            outputs = model(degraded)
+            loss = criterion(outputs, clear)
+            
+            # Backward Pass
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            epoch_loss += loss.item()
+        end_time =  time.time()
+        loss.append(epoch_loss/len(train_loader))
+        duration.append(end_time - start_time)
+        print(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}")
+        with open("output.txt", "a") as file:
+            file.write(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}\n")
+    return {'loss': loss, 'duration': duration}
