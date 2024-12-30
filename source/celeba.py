@@ -92,7 +92,6 @@ class CelebADataset:
             axes[1, i].set_title("y")
 
         plt.tight_layout()
-        plt.title('Examples of CelebA Samples')
         plt.savefig(save_path)
 
         return stats
@@ -116,7 +115,7 @@ class CelebADataset:
         self.x = np.copy(self.y)
         for i in range(self.x.shape[0]):
             img = Image.fromarray(self.x[i])
-            img = img.resize((self.width // 2, self.height // 2)).resize((self.width, self.height))
+            img = img.resize((self.width // 5, self.height // 5)).resize((self.width, self.height))
             self.x[i] = np.array(img)
 
     def _split(self):

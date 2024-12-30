@@ -12,11 +12,10 @@ def main():
     batch_size=16
     lr = 0.001
     file_name = f"../results/s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}.json"
-    
+
     # Initiliaze dataset
     dataset = CelebADataset(num_samples=num_samples)
     dataset.load()
-    dataset.statistical_analysis(save_path='../plots/celeba_examples.png')    
 
     # Datasets and Loaders
     x_train, y_train, x_test, y_test = dataset.get_train_test_split()
