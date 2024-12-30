@@ -3,6 +3,7 @@ from PIL import Image
 import os, time
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from utils import plot_examples
 
 class CelebADataset:
     def __init__(self, root_dir='../data/', test_split=0.4, norm='min-max', verbose=True, noise=False, num_samples=None):
@@ -29,7 +30,7 @@ class CelebADataset:
 
         if self.noise:
             num_images = 100
-            self.y = np.zeros((num_images, self.height, self.width, 3), dtype=np.uint8)
+            self.y = np.random.randint(0, 256, (num_images, self.height, self.width, 3), dtype=np.uint8)
         else:
             base_folder = 'img_align_celeba'
             image_dir = os.path.join(self.root_dir, base_folder)
@@ -49,7 +50,7 @@ class CelebADataset:
         end_time = time.time()
 
         if self.verbose:
-            print(f"Loaded {len(self.y)} images from {self.root_dir} in {end_time - start_time:.2f}s.")
+            print(f"Loaded {len(self.y)} images in {end_time - start_time:.2f}s.")
 
         self._create_x()
         self._split()
@@ -75,25 +76,7 @@ class CelebADataset:
         }
         if self.verbose:
             print("Statistical analysis:", stats)
-
-        # Plot random examples
-        num_examples = 6
-        fig, axes = plt.subplots(2, num_examples, figsize=(15, 5))
-        fig.suptitle("Examples of CelebA Image Quality Enhacement Dataset", fontsize=16)
-        random_indices = np.random.choice(len(self.x_train), num_examples, replace=False)
-
-        for i, idx in enumerate(random_indices):
-            axes[0, i].imshow(self.x_train[idx].astype(np.uint8))
-            axes[0, i].axis('off')
-            axes[0, i].set_title("x")
-
-            axes[1, i].imshow(self.y_train[idx].astype(np.uint8))
-            axes[1, i].axis('off')
-            axes[1, i].set_title("y")
-
-        plt.tight_layout()
-        plt.savefig(save_path)
-
+        plot_examples(self.x_train, self.y_train, save_path=save_path)            
         return stats
 
     def _normalize(self):
@@ -122,6 +105,9 @@ class CelebADataset:
         """
         Split the dataset into training and testing sets based on the test_split.
         """
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(
-            self.x, self.y, test_size=self.test_split, random_state=42, stratify=None
-        )
+
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y,
+                                                                                test_size=self.test_split,
+                                                                                random_state=42,
+                                                                                stratify=None)
+       
