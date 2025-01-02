@@ -1,6 +1,7 @@
 from celeba import CelebADataset
 from rbf_net import ImageEnhancementRBFNet
-from utils import evaluate_image_quality, save_metrics_to_json, train_model, ImageEnhancementDataset
+from utils import evaluate_image_quality, save_metrics_to_json, ImageEnhancementDataset
+from train_loops import train_model
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
@@ -13,7 +14,7 @@ def main():
     lr = 0.001
     file_name = f"../results/rbf_s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}.json"
 
-    # Initiliaze dataset
+    # Initialize dataset
     dataset = CelebADataset(noise=True, num_samples=num_samples)
     dataset.load()
 

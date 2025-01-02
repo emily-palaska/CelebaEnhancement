@@ -29,8 +29,7 @@ class CelebADataset:
         start_time = time.time()
 
         if self.noise:
-            num_images = 100
-            self.y = np.random.randint(0, 256, (num_images, self.height, self.width, 3), dtype=np.uint8)
+            self.y = np.random.randint(0, 256, (self.num_samples, self.height, self.width, 3), dtype=np.uint8)
         else:
             base_folder = 'img_align_celeba'
             image_dir = os.path.join(self.root_dir, base_folder)

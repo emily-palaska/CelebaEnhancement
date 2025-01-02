@@ -1,8 +1,7 @@
 from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
 import numpy as np
 import matplotlib.pyplot as plt
-import torch, json, time
-from tqdm import tqdm
+import torch, json
 from torch.utils.data import Dataset
 from torchvision.transforms import Resize
 
@@ -20,7 +19,7 @@ def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Ima
         model: The PyTorch model to evaluate.
         test_loader: DataLoader for test data.
         device: Device to run the model on.
-        json_path: Path to save the metrics JSON file.
+        title: Title of the plot
 
     Returns:
         A dictionary containing evaluation metrics.
@@ -56,7 +55,10 @@ def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Ima
                 psnr_scores.append(psnr_score)
                 ssim_scores.append(ssim_score)
     # Plot examples of predictions
-    plot_examples(original_images, enhanced_images, save_path='plots/examples.png', title=title)
+    enhanced_images = np.array(enhanced_images)
+    enhanced_images = (enhanced_images - enhanced_images.min()) / (enhanced_images.max() - enhanced_images.min())
+    print(np.min(enhanced_images), np.max(enhanced_images))
+    plot_examples(original_images, enhanced_images, save_path='../plots/examples.png', title=title)
 
     # Aggregate metrics
     metrics = {
@@ -66,37 +68,7 @@ def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Ima
     }
     return metrics
 
-# Train Function
-def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
-    # Initialize output file
-    with open("output.txt", "w") as file:
-            file.write(f"")
-    loss_per_epoch = []
-    duration_per_epoch = []
-    model.train()
-    for epoch in range(epochs):
-        start_time = time.time()
-        epoch_loss = 0
-        for degraded, clear in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}"):
-            degraded, clear = degraded.to(device), clear.to(device)
-            
-            # Forward Pass
-            outputs = model(degraded)
-            loss = criterion(outputs, clear)
-            
-            # Backward Pass
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            
-            epoch_loss += loss.item()
-        end_time =  time.time()
-        loss_per_epoch.append(epoch_loss/len(train_loader))
-        duration_per_epoch.append(end_time - start_time)
-        print(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}")
-        with open("output.txt", "a") as file:
-            file.write(f"Epoch {epoch+1}, Loss: {epoch_loss/len(train_loader):.4f}, Time: {end_time - start_time : .2f}\n")
-    return {'loss': loss_per_epoch, 'duration': duration_per_epoch}
+
 
 # Custom Dataset Class
 class ImageEnhancementDataset(Dataset):

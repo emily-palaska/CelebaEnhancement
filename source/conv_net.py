@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as f
 
 class ImageEnhancementConvNet(nn.Module):
     def __init__(self):
@@ -20,11 +20,11 @@ class ImageEnhancementConvNet(nn.Module):
 
     def forward(self, x):
         # Encoder
-        x = F.relu(self.bn1(self.enc1(x)))  
-        x = F.relu(self.bn2(self.enc2(x)))  
-        x = F.relu(self.bn3(self.enc3(x))) 
+        x = f.relu(self.bn1(self.enc1(x)))
+        x = f.relu(self.bn2(self.enc2(x)))
+        x = f.relu(self.bn3(self.enc3(x)))
         # Decoder
-        x = F.relu(self.dec1(x))           
-        x = F.relu(self.dec2(x))           
+        x = f.relu(self.dec1(x))
+        x = f.relu(self.dec2(x))
         x = torch.sigmoid(self.dec3(x))    
         return x
