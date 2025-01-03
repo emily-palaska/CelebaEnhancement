@@ -10,10 +10,11 @@ from gan_net import Generator, Discriminator
 def main():
     # Training Parameters
     num_samples = 10000
-    num_epochs = 100
-    batch_size = 16
-    lr = 0.0001
-    file_name = f"../results/gan_s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}.json"
+    num_epochs = 50
+    batch_size = 32
+    g_lr = 0.0002
+    d_lr = 0.00005
+    file_name = f"../results/gan_s{num_samples}_e{num_epochs}_bs{batch_size}_glr{g_lr}_dlr{d_lr}.json"
 
     # Dataset and DatLoader
     dataset = CelebADataset(num_samples=num_samples)
@@ -28,8 +29,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     generator = Generator().to(device)
     discriminator = Discriminator().to(device)
-    optimizer_g = torch.optim.Adam(generator.parameters(), lr=lr, betas=(0.5, 0.999))
-    optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=lr, betas=(0.5, 0.999))
+    optimizer_g = torch.optim.Adam(generator.parameters(), lr=g_lr, betas=(0.5, 0.999))
+    optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=d_lr, betas=(0.5, 0.999))
     criterion = nn.BCELoss()
 
     # Train the GAN
