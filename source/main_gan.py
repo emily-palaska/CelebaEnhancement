@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+
+from source import plot_examples_with_predictions
 from utils import ImageEnhancementDataset, evaluate_image_quality, save_metrics_to_json
 from train_loops import train_gan
 from celeba import CelebADataset
@@ -12,12 +14,15 @@ def main():
     num_samples = 10000
     num_epochs = 50
     batch_size = 32
+    backbone = 'default'
+    noise = False
     g_lr = 0.0002
     d_lr = 0.00005
-    file_name = f"../results/gan_s{num_samples}_e{num_epochs}_bs{batch_size}_glr{g_lr}_dlr{d_lr}.json"
+    file_name = 'noise' if noise else 'celeba'
+    file_name += f"_gan_{backbone}_s{num_samples}_e{num_epochs}_bs{batch_size}_glr{g_lr}_dlr{d_lr}"
 
     # Dataset and DatLoader
-    dataset = CelebADataset(num_samples=num_samples)
+    dataset = CelebADataset(noise=noise, num_samples=num_samples)
     dataset.load()
     x_train, y_train, x_test, y_test = dataset.get_train_test_split()
     train_dataset = ImageEnhancementDataset(x_train, y_train, resize=True)
@@ -33,13 +38,14 @@ def main():
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=d_lr, betas=(0.5, 0.999))
     criterion = nn.BCELoss()
 
-    # Train the GAN
+    # Train and evaluate the GAN
     results = train_gan(generator, discriminator, train_loader, optimizer_g, optimizer_d, criterion, device, epochs=num_epochs)
-    results['test'] = evaluate_image_quality(generator, test_loader, device, title='Evaluation of GAN Image Enhancement')
+    metrics, x, y, y_hat = evaluate_image_quality(generator, test_loader, device)
 
-    # Save Results
-    print(results)
-    save_metrics_to_json(results, file_name)
+    # Plot and save results
+    results['test'] = metrics
+    plot_examples_with_predictions(x, y, y_hat, save_path=f'../{file_name}.png', title=f'GAN Image Enhancement ({backbone} backbone)')
+    save_metrics_to_json(results, f'../results/{file_name}.json')
 
 if __name__ == '__main__':
     main()

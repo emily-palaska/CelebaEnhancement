@@ -12,7 +12,7 @@ def save_metrics_to_json(metrics, file_path):
     with open(file_path, 'w') as json_file:
         json.dump(metrics, json_file, indent=4)
 
-def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Image Enhancement'):
+def evaluate_image_quality(model, test_loader, device):
     """Evaluate image quality enhancement model.
 
     Args:
@@ -35,23 +35,25 @@ def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Ima
     with torch.no_grad():
         for degraded, clear in test_loader:
             degraded, clear = degraded.to(device), clear.to(device)
-            outputs = model(degraded).cpu().numpy()
-            clear = clear.cpu().numpy()
+            outputs, clear, degraded  = model(degraded).cpu().numpy(), clear.cpu().numpy(), degraded.cpu().numpy()
 
             for i in range(outputs.shape[0]):
-                enhanced = outputs[i].transpose(1, 2, 0)  # Convert to HWC for metrics
-                original = clear[i].transpose(1, 2, 0)    # Convert to HWC for metrics
+                # Convert to HWC for metrics
+                y_hat = outputs[i].transpose(1, 2, 0)
+                y = clear[i].transpose(1, 2, 0)
+                x = degraded[i].transpose(1, 2, 0)
 
-                if len(x_samples) < 10: # sample first 10 to plot them
-                    x_samples.append(degraded)
-                    y_samples.append(original)
-                    y_hat_samples.append(enhanced)
+                # Sample first 10 images to return
+                if len(x_samples) < 10:
+                    x_samples.append(x)
+                    y_samples.append(y)
+                    y_hat_samples.append(y_hat)
 
                 # Compute metrics for each image
-                mse = np.mean((enhanced - original) ** 2)
-                psnr_score = psnr(original, enhanced, data_range=original.max() - original.min() + 1e-10)
-                data_range = np.max(enhanced) - np.min(enhanced) + 1e-10 # Small number addition to avoid division by zero
-                ssim_score = ssim(enhanced, original, channel_axis=2, data_range=data_range)
+                mse = np.mean((y_hat - y) ** 2)
+                psnr_score = psnr(y, y_hat, data_range=y.max() - y.min() + 1e-10)
+                data_range = np.max(y_hat) - np.min(y_hat) + 1e-10 # Small number addition to avoid division by zero
+                ssim_score = ssim(y_hat, y, channel_axis=2, data_range=data_range)
                 
                 mse_scores.append(mse)
                 psnr_scores.append(psnr_score)
@@ -60,7 +62,6 @@ def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Ima
     # Plot examples of predictions
     x_samples, y_samples, y_hat_samples = np.array(x_samples), np.array(y_samples), np.array(y_hat_samples)
     y_hat_samples = (y_hat_samples - y_hat_samples.min()) / (y_hat_samples.max() - y_hat_samples.min())
-    plot_examples_with_predictions(x_samples, y_samples, y_hat_samples, save_path='../plots/examples.png', title=title)
 
     # Aggregate metrics
     metrics = {
@@ -68,7 +69,7 @@ def evaluate_image_quality(model, test_loader, device,  title='Evaluation of Ima
         'avg_psnr': float(np.mean(psnr_scores)),
         'avg_ssim': float(np.mean(ssim_scores)),
     }
-    return metrics
+    return metrics, x_samples, y_samples, y_hat_samples
 
 
 # Custom Dataset Class

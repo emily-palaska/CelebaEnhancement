@@ -1,31 +1,32 @@
 from celeba import CelebADataset
 from conv_net import ImageEnhancementConvNet
-from utils import evaluate_image_quality, save_metrics_to_json, ImageEnhancementDataset
+from utils import evaluate_image_quality, save_metrics_to_json, ImageEnhancementDataset, plot_examples_with_predictions
 from train_loops import train_model
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 
 def main():
-    # Training parameters
-    num_samples=10000
-    num_epochs=100
-    batch_size=16
-    lr = 0.001
-    file_name = f"../results/conv_s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}.json"
+    # Training Parameters
+    num_samples = 10000
+    num_epochs = 50
+    batch_size = 32
+    backbone = 'default'
+    noise = False
+    lr = 0.0001
+    file_name = 'noise' if noise else 'celeba'
+    file_name += f"_gan_{backbone}_s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}"
 
-    # Initiliaze dataset
-    dataset = CelebADataset(num_samples=num_samples)
+    # Dataset and DatLoader
+    dataset = CelebADataset(noise=noise, num_samples=num_samples)
     dataset.load()
-
-    # Datasets and Loaders
     x_train, y_train, x_test, y_test = dataset.get_train_test_split()
     train_dataset = ImageEnhancementDataset(x_train, y_train, resize=True)
     test_dataset = ImageEnhancementDataset(x_test, y_test, resize=True)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    # Model, Criterion, Optimizer
+    # Initialize Models, Optimizers, and Criterion
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ImageEnhancementConvNet().to(device)
     criterion = nn.MSELoss()
@@ -33,11 +34,13 @@ def main():
 
     # Train and evaluate
     results = train_model(model, train_loader, criterion, optimizer, device, epochs=num_epochs)
-    results['test'] = evaluate_image_quality(model, test_loader, device)
-    
-    # Save results to JSON file
-    print(results)
-    save_metrics_to_json(results, file_name)
+    metrics, x, y, y_hat = evaluate_image_quality(model, test_loader, device)
+
+    # Plot and save results
+    results['test'] = metrics
+    plot_examples_with_predictions(x, y, y_hat, save_path=f'../{file_name}.png',
+                                   title=f'GAN Image Enhancement ({backbone} backbone)')
+    save_metrics_to_json(results, f'../results/{file_name}.json')
 
 if __name__ == '__main__':
     main()
