@@ -1,9 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-
-from source import plot_examples_with_predictions
-from utils import ImageEnhancementDataset, evaluate_image_quality, save_metrics_to_json
+from utils import ImageEnhancementDataset, evaluate_image_quality, save_metrics_to_json, plot_examples_with_predictions
 from train_loops import train_gan
 from celeba import CelebADataset
 from gan_net import Generator, Discriminator
