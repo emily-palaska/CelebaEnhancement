@@ -1,7 +1,18 @@
 import torch.nn as nn
 import torchvision.models as models
+import torch
 
 # Generator class with ResNet18, VGG16, or default implementation
+class HebbianNetwork(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(HebbianNetwork, self).__init__()
+        self.weights = nn.Parameter(torch.randn(input_size, output_size) * 0.01)
+
+    def forward(self, x):
+        x_flattened = x.view(x.size(0), -1)  # Flatten the input
+        return x_flattened @ self.weights  # Linear transformation with Hebbian weights
+
+
 class Generator(nn.Module):
     def __init__(self, backbone=None):
         super(Generator, self).__init__()
@@ -11,6 +22,13 @@ class Generator(nn.Module):
         elif backbone == "vgg16":
             self.feature_extractor = models.vgg16(pretrained=True)
             self.feature_extractor.classifier = nn.Identity()  # Remove classifier
+        elif backbone == "hebbian":
+            self.model = nn.Sequential(
+                HebbianNetwork(3 * 64 * 64, 256),
+                nn.ReLU(),
+                nn.Linear(256, 3 * 64 * 64),
+                nn.Tanh()
+            )
         else:
             # Default Generator Implementation
             self.model = nn.Sequential(
@@ -39,7 +57,7 @@ class Generator(nn.Module):
             return self.model(features)
         return self.model(x)
 
-# Discriminator class with ResNet18, VGG16, or default implementation
+
 class Discriminator(nn.Module):
     def __init__(self, backbone=None):
         super(Discriminator, self).__init__()
@@ -49,6 +67,13 @@ class Discriminator(nn.Module):
         elif backbone == "vgg16":
             self.feature_extractor = models.vgg16(pretrained=True)
             self.feature_extractor.classifier = nn.Identity()  # Remove classifier
+        elif backbone == "hebbian":
+            self.model = nn.Sequential(
+                HebbianNetwork(3 * 64 * 64, 128),
+                nn.LeakyReLU(0.2),
+                nn.Linear(128, 1),
+                nn.Sigmoid()
+            )
         else:
             # Default Discriminator Implementation
             self.model = nn.Sequential(

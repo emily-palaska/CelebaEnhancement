@@ -39,8 +39,9 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=10):
 def train_gan(generator, discriminator, train_loader, optimizer_g, optimizer_d, criterion, device, epochs=10):
     g_losses = []
     d_losses = []
-
+    duration_per_epoch = []
     for epoch in range(epochs):
+        start_time = time.time()
         g_epoch_loss = 0
         d_epoch_loss = 0
 
@@ -71,9 +72,11 @@ def train_gan(generator, discriminator, train_loader, optimizer_g, optimizer_d, 
             g_epoch_loss += g_loss.item()
             d_epoch_loss += d_loss.item()
 
+        end_time = time.time()
         g_losses.append(g_epoch_loss / len(train_loader))
         d_losses.append(d_epoch_loss / len(train_loader))
+        duration_per_epoch.append(end_time - start_time)
         print(
-            f"Epoch {epoch + 1}/{epochs}, Generator Loss: {g_epoch_loss / len(train_loader):.4f}, Discriminator Loss: {d_epoch_loss / len(train_loader):.4f}")
+            f"Epoch {epoch + 1}/{epochs}, Generator Loss: {g_epoch_loss / len(train_loader):.4f}, Discriminator Loss: {d_epoch_loss / len(train_loader):.4f}, Time: {end_time - start_time : .2f}")
 
-    return {'g_losses': g_losses, 'd_losses': d_losses}
+    return {'g_losses': g_losses, 'd_losses': d_losses, 'duration': duration_per_epoch}

@@ -19,7 +19,6 @@ def evaluate_image_quality(model, test_loader, device):
         model: The PyTorch model to evaluate.
         test_loader: DataLoader for test data.
         device: Device to run the model on.
-        title: Title of the plot
 
     Returns:
         A dictionary containing evaluation metrics.
@@ -52,8 +51,7 @@ def evaluate_image_quality(model, test_loader, device):
                 # Compute metrics for each image
                 mse = np.mean((y_hat - y) ** 2)
                 psnr_score = psnr(y, y_hat, data_range=y.max() - y.min() + 1e-10)
-                data_range = np.max(y_hat) - np.min(y_hat) + 1e-10 # Small number addition to avoid division by zero
-                ssim_score = ssim(y_hat, y, channel_axis=2, data_range=data_range)
+                ssim_score = ssim(y_hat, y, channel_axis=2, data_range=y.max() - y.min() + 1e-10)
                 
                 mse_scores.append(mse)
                 psnr_scores.append(psnr_score)
