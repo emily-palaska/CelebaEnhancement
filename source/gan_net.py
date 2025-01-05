@@ -2,33 +2,25 @@ import torch.nn as nn
 import torchvision.models as models
 import torch
 
-# Generator class with ResNet18, VGG16, or default implementation
-class HebbianNetwork(nn.Module):
-    def __init__(self, input_size, output_size):
-        super(HebbianNetwork, self).__init__()
-        self.weights = nn.Parameter(torch.randn(input_size, output_size) * 0.01)
-
-    def forward(self, x):
-        x_flattened = x.view(x.size(0), -1)  # Flatten the input
-        return x_flattened @ self.weights  # Linear transformation with Hebbian weights
-
-
 class Generator(nn.Module):
     def __init__(self, backbone=None):
         super(Generator, self).__init__()
         if backbone == "resnet18":
-            self.feature_extractor = models.resnet18(pretrained=True)
+            # Use ResNet18 backbone
+            self.feature_extractor = models.resnet18(weights='IMAGENET1K_V1')  # Use latest weights API
             self.feature_extractor.fc = nn.Identity()  # Remove classifier
+            # Now add layers to convert feature map to 180x220x3
+            self.conv = nn.Conv2d(512, 3, kernel_size=3, stride=1, padding=1)  # Ensure 3 output channels
+            self.upsample = nn.Upsample(size=(180, 220), mode='bilinear', align_corners=False)
+
         elif backbone == "vgg16":
-            self.feature_extractor = models.vgg16(pretrained=True)
+            # Use VGG16 backbone
+            self.feature_extractor = models.vgg16(weights='IMAGENET1K_V1')  # Use latest weights API
             self.feature_extractor.classifier = nn.Identity()  # Remove classifier
-        elif backbone == "hebbian":
-            self.model = nn.Sequential(
-                HebbianNetwork(3 * 64 * 64, 256),
-                nn.ReLU(),
-                nn.Linear(256, 3 * 64 * 64),
-                nn.Tanh()
-            )
+            # Now add layers to convert feature map to 180x220x3
+            self.conv = nn.Conv2d(512, 3, kernel_size=3, stride=1, padding=1)  # Ensure 3 output channels
+            self.upsample = nn.Upsample(size=(180, 220), mode='bilinear', align_corners=False)
+
         else:
             # Default Generator Implementation
             self.model = nn.Sequential(
@@ -52,28 +44,30 @@ class Generator(nn.Module):
 
     def forward(self, x):
         if hasattr(self, 'feature_extractor'):
-            features = self.feature_extractor(x)
+            features = self.feature_extractor(x)  # Extract features
             features = features.view(features.size(0), 512, 1, 1)  # Reshape for transpose conv
-            return self.model(features)
-        return self.model(x)
+            features = self.conv(features)  # Generate the image
+            return self.upsample(features)  # Upsample to 180x220
+        return self.model(x)  # Use default model
 
 
 class Discriminator(nn.Module):
     def __init__(self, backbone=None):
         super(Discriminator, self).__init__()
         if backbone == "resnet18":
-            self.feature_extractor = models.resnet18(pretrained=True)
+            # Use ResNet18 backbone
+            self.feature_extractor = models.resnet18(weights='IMAGENET1K_V1')  # Use latest weights API
             self.feature_extractor.fc = nn.Identity()  # Remove classifier
+            self.flatten = nn.Flatten()
+            self.fc = nn.Linear(512, 1)
+
         elif backbone == "vgg16":
-            self.feature_extractor = models.vgg16(pretrained=True)
+            # Use VGG16 backbone
+            self.feature_extractor = models.vgg16(weights='IMAGENET1K_V1')  # Use latest weights API
             self.feature_extractor.classifier = nn.Identity()  # Remove classifier
-        elif backbone == "hebbian":
-            self.model = nn.Sequential(
-                HebbianNetwork(3 * 64 * 64, 128),
-                nn.LeakyReLU(0.2),
-                nn.Linear(128, 1),
-                nn.Sigmoid()
-            )
+            self.flatten = nn.Flatten()
+            self.fc = nn.Linear(512, 1)
+
         else:
             # Default Discriminator Implementation
             self.model = nn.Sequential(
@@ -92,6 +86,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         if hasattr(self, 'feature_extractor'):
-            features = self.feature_extractor(x)
-            return nn.Sigmoid()(nn.Flatten()(features))
-        return self.model(x)
+            features = self.feature_extractor(x)  # Extract features from ResNet18 or VGG16
+            features = self.flatten(features)  # Flatten features for the final layer
+            return torch.sigmoid(self.fc(features))  # Output a single probability
+        return self.model(x)  # Use default model

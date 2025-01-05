@@ -9,13 +9,13 @@ from gan_net import Generator, Discriminator
 # Main Function
 def main():
     # Training Parameters
-    num_samples = 50000
-    num_epochs = 50
-    batch_size = 128
+    num_samples = 75000
+    num_epochs = 100
+    batch_size = 64
     backbone = 'resnet18'
-    noise = False
+    noise = True
     g_lr = 1e-4
-    d_lr = 1e-4
+    d_lr = 1e-4 / 2
     file_name = 'noise' if noise else 'celeba'
     file_name += f"_gan_{backbone}_s{num_samples}_e{num_epochs}_bs{batch_size}_glr{g_lr}_dlr{d_lr}"
 
@@ -30,8 +30,8 @@ def main():
 
     # Initialize Models, Optimizers, and Criterion
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    generator = Generator().to(device)
-    discriminator = Discriminator().to(device)
+    generator = Generator(backbone=backbone).to(device)
+    discriminator = Discriminator(backbone=backbone).to(device)
     optimizer_g = torch.optim.Adam(generator.parameters(), lr=g_lr, betas=(0.5, 0.999))
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=d_lr, betas=(0.5, 0.999))
     criterion = nn.BCELoss()
