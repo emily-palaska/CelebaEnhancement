@@ -9,11 +9,11 @@ from gan_net import Generator, Discriminator
 # Main Function
 def main():
     # Training Parameters
-    num_samples = 75000
+    num_samples = 50000
     num_epochs = 100
     batch_size = 64
-    backbone = 'resnet18'
-    noise = True
+    backbone = 'vgg16'
+    noise = False
     g_lr = 1e-4
     d_lr = 1e-4 / 2
     file_name = 'noise' if noise else 'celeba'

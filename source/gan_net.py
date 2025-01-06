@@ -5,6 +5,7 @@ import torch
 class Generator(nn.Module):
     def __init__(self, backbone=None):
         super(Generator, self).__init__()
+        self.backbone = backbone
         if backbone == "resnet18":
             # Use ResNet18 backbone
             self.feature_extractor = models.resnet18(weights='IMAGENET1K_V1')  # Use latest weights API
@@ -45,7 +46,8 @@ class Generator(nn.Module):
     def forward(self, x):
         if hasattr(self, 'feature_extractor'):
             features = self.feature_extractor(x)  # Extract features
-            features = features.view(features.size(0), 512, 1, 1)  # Reshape for transpose conv
+            dim = 1 if self.backbone == "resnet18" else 7
+            features = features.view(features.size(0), 512, dim, dim)  # Reshape for transpose conv
             features = self.conv(features)  # Generate the image
             return self.upsample(features)  # Upsample to 180x220
         return self.model(x)  # Use default model
@@ -54,6 +56,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, backbone=None):
         super(Discriminator, self).__init__()
+        self.backbone = backbone
         if backbone == "resnet18":
             # Use ResNet18 backbone
             self.feature_extractor = models.resnet18(weights='IMAGENET1K_V1')  # Use latest weights API
@@ -65,8 +68,8 @@ class Discriminator(nn.Module):
             # Use VGG16 backbone
             self.feature_extractor = models.vgg16(weights='IMAGENET1K_V1')  # Use latest weights API
             self.feature_extractor.classifier = nn.Identity()  # Remove classifier
-            self.flatten = nn.Flatten()
-            self.fc = nn.Linear(512, 1)
+            self.fc = nn.Sequential(nn.Linear(25088, 512),
+                                    nn.Linear(512, 1))
 
         else:
             # Default Discriminator Implementation
@@ -87,6 +90,6 @@ class Discriminator(nn.Module):
     def forward(self, x):
         if hasattr(self, 'feature_extractor'):
             features = self.feature_extractor(x)  # Extract features from ResNet18 or VGG16
-            features = self.flatten(features)  # Flatten features for the final layer
+            if self.backbone == 'resnet18': self.flatten(features)
             return torch.sigmoid(self.fc(features))  # Output a single probability
         return self.model(x)  # Use default model
