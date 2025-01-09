@@ -6,23 +6,10 @@ from torch.utils.data import Dataset
 from torchvision.transforms import Resize
 
 def save_metrics_to_json(metrics, file_path):
-    """
-    Save metrics dictionary to a JSON file.
-    """
     with open(file_path, 'w') as json_file:
         json.dump(metrics, json_file, indent=4)
 
 def evaluate_image_quality(model, test_loader, device):
-    """Evaluate image quality enhancement model.
-
-    Args:
-        model: The PyTorch model to evaluate.
-        test_loader: DataLoader for test data.
-        device: Device to run the model on.
-
-    Returns:
-        A dictionary containing evaluation metrics.
-    """
     model.eval()
     psnr_scores = []
     ssim_scores = []
@@ -87,9 +74,6 @@ class ImageEnhancementDataset(Dataset):
         return len(self.x_data)
     
 def plot_examples(x, y, num_examples=6, save_path='examples.png', title='Examples of CelebA Image Quality Enhancement Dataset'):
-    """
-    Plot random examples of give x and y
-    """
     # Scale for plotting
     x = x * 255 if np.max(x) <= 1.0 else x
     y = y * 255 if np.max(y) <= 1.0 else y
@@ -112,18 +96,6 @@ def plot_examples(x, y, num_examples=6, save_path='examples.png', title='Example
 
 def plot_examples_with_predictions(x, y, y_hat, num_examples=6, save_path='enhanced_examples.png',
                                    title='Image Quality Enhancement Results'):
-    """
-    Plot random examples of x, y, and y_hat (model output).
-
-    Args:
-        x (np.ndarray): Degraded images (input to the model).
-        y (np.ndarray): Ground truth clear images.
-        y_hat (np.ndarray): Enhanced images (model output).
-        num_examples (int): Number of examples to plot.
-        save_path (str): Path to save the plot.
-        title (str): Title of the plot.
-    """
-    # Scale for plotting if data is in range [0, 1]
     x = x * 255 if np.max(x) <= 1.0 else x
     y = y * 255 if np.max(y) <= 1.0 else y
     y_hat = y_hat * 255 if np.max(y_hat) <= 1.0 else y_hat
@@ -133,22 +105,19 @@ def plot_examples_with_predictions(x, y, y_hat, num_examples=6, save_path='enhan
     random_indices = np.random.choice(len(x), num_examples, replace=False)
 
     for i, idx in enumerate(random_indices):
-        # Plot degraded image (x)
         axes[0, i].imshow(x[idx].astype(np.uint8))
         axes[0, i].axis('off')
         axes[0, i].set_title("x")
 
-        # Plot ground truth image (y)
         axes[1, i].imshow(y[idx].astype(np.uint8))
         axes[1, i].axis('off')
         axes[1, i].set_title("y")
 
-        # Plot enhanced image (y_hat)
         axes[2, i].imshow(y_hat[idx].astype(np.uint8))
         axes[2, i].axis('off')
         axes[2, i].set_title("y_hat")
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.9)  # Adjust top for title
+    plt.subplots_adjust(top=0.9)
     plt.savefig(save_path)
-    plt.close(fig)  # Close the figure to free memory
+    plt.close(fig)
