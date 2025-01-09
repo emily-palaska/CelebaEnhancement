@@ -11,11 +11,10 @@ def main():
     num_samples = 10000
     num_epochs = 50
     batch_size = 32
-    backbone = 'default'
     noise = False
     lr = 0.0001
     file_name = 'noise' if noise else 'celeba'
-    file_name += f"_gan_{backbone}_s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}"
+    file_name += f"_gan_s{num_samples}_e{num_epochs}_bs{batch_size}_lr{lr}"
 
     # Dataset and DatLoader
     dataset = CelebADataset(noise=noise, num_samples=num_samples)
@@ -39,7 +38,7 @@ def main():
     # Plot and save results
     results['test'] = metrics
     plot_examples_with_predictions(x, y, y_hat, save_path=f'../{file_name}.png',
-                                   title=f'GAN Image Enhancement ({backbone} backbone)')
+                                   title=f'CONV Image Enhancement')
     save_metrics_to_json(results, f'../results/{file_name}.json')
 
 if __name__ == '__main__':

@@ -1,9 +1,7 @@
 import numpy as np
 from PIL import Image
 import os, time
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from utils import plot_examples
 
 class CelebADataset:
     def __init__(self, root_dir='../data/', test_split=0.4, norm='min-max', verbose=True, noise=False, num_samples=None):
@@ -75,7 +73,6 @@ class CelebADataset:
         }
         if self.verbose:
             print("Statistical analysis:", stats)
-        plot_examples(self.x_train, self.y_train, save_path=save_path)            
         return stats
 
     def _normalize(self):
